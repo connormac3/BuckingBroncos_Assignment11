@@ -1,7 +1,7 @@
-# CSVProcessor.py
+# API_zipcode.py
 
-# Name: Ryan Dew,
-# email: dewrm@mail.uc.edu, 
+# Name: Ryan Dew
+# email: dewrm@mail.uc.edu
 # Assignment Number: 08
 # Due Date:  10/31/2024
 # Course #/Section: IS4010-001
@@ -13,17 +13,3 @@
 # Anything else that's relevant: None
 
 
-import csv
-
-class CSVProcessor:
-    
-    def __init__(self, filename):
-        self.__filename = filename
-        
-    def process(self):
-        print("Processing", self.__filename)
-        data = self.readData()
-
-    def readData(self):
-        return None
-        

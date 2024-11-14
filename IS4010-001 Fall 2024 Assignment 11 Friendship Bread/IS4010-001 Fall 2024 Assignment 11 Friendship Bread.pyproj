@@ -21,6 +21,12 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="API_zipcodePackage\API_zipcode.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="API_zipcodePackage\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="CSVPackage\CSVProcessor.py">
       <SubType>Code</SubType>
     </Compile>
@@ -33,6 +39,7 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="API_zipcodePackage\" />
     <Folder Include="CSVPackage\" />
     <Folder Include="mainPackage\" />
     <Folder Include="Data\" />
