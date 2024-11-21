@@ -94,3 +94,89 @@ class CSVProcessor:
                 continue
             
             row_dict = dict(zip(headers, row + [""]))
+   # Skip Pepsi purchases (assuming Pepsi is in the 6th column)
+            if row[5].strip().lower() == "pepsi":
+                anomalies.append(row)
+                continue
+            
+            # Ensure gross price has 2 decimal places
+            try:
+                row_dict["Gross Price"] = f"{float(row[2]):.2f}"
+            except ValueError:
+                anomalies.append(row)
+                continue
+            
+            # Parse Address for city and state (assuming Address is in the 4th column)
+            address = row[3]
+            city, state = self.extract_city_and_state(address)
+            zip_code = row[7].strip() if len(row) > 7 else ""
+            if not zip_code:
+                cities_to_fetch.add(city)
+            
+            row_dict["ZIP Code"] = zip_code
+            row_dict["City"] = city  # Add city to row_dict for later use
+            cleaned_rows.append(row_dict)
+        
+        # Fetch ZIP codes in parallel
+        with ThreadPoolExecutor() as executor:
+            city_zip_map = {city: zip_code for city, zip_code in zip(cities_to_fetch, executor.map(get_zipcode_data, cities_to_fetch))}
+        
+        # Update rows with fetched ZIP codes
+        for row_dict in cleaned_rows:
+            if not row_dict["ZIP Code"]:
+                row_dict["ZIP Code"] = city_zip_map.get(row_dict["City"], "")
+        
+        # Write cleaned data and anomalies
+        self.write_data(self.cleaned_data_file, [headers] + [self.update_row_with_zip(row_dict, headers) for row_dict in cleaned_rows])
+        self.write_data(self.anomalies_file, [headers] + anomalies)
+        print("Data cleaning process completed.")
+
+    def update_row_with_zip(self, row_dict, headers):
+        """Update the row with the new ZIP code in column 8."""
+        row_list = [row_dict[header] for header in headers]
+        if "ZIP Code" in headers and len(row_list) > 7:
+            row_list[7] = row_dict["ZIP Code"]
+        return row_list
+
+    def extract_city_and_state(self, address):
+        """Extracts city and state from an address string.
+        Args:
+            address (str): The full address string.
+        Returns:
+            tuple: A tuple of (city, state), where either can be None.
+        """
+        match = re.search(r'(.+),\s*([^,]+),\s*([A-Z]{2})', address)
+        if not match:
+            return None, None
+        
+        city = match.group(2).strip()
+        state = match.group(3).strip()
+        
+        return city, state
+
+    def read_data(self):
+        """Reads data from the CSV file."""
+        try:
+            with open(self.filename, "r", newline="", encoding="utf-8") as csvfile:
+                reader = csv.reader(csvfile)
+                data = list(reader)
+                return data
+        except FileNotFoundError as e:
+            print(f"Error reading CSV file: {e}")
+            return None
+
+    def write_data(self, filepath, data):
+        """Writes data to a CSV file."""
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        
+        with open(filepath, "w", newline="", encoding="utf-8") as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerows(data)
+
+        # Ensure the file is created even if data is empty
+        if not data:
+            with open(filepath, "w", newline="", encoding="utf-8") as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerow([])  # Write an empty row to create the file
+
+
